@@ -19,7 +19,7 @@ enum _ItemActions { delete, edit }
 class _ItemsWidgetState extends State<ItemsWidget> {
   final _storage = new FlutterSecureStorage();
 
-  List<_SecItem> _items = [];
+  List<_SecItem> _secureItems = [];
 
   @override
   void initState() {
@@ -29,10 +29,10 @@ class _ItemsWidgetState extends State<ItemsWidget> {
   }
 
   Future<Null> _readAll() async {
-    final all = await _storage.readAll();
+    final allItems = await _storage.readAll();
     setState(() {
-      return _items = all.keys
-          .map((key) => new _SecItem(key, all[key]))
+      return _secureItems = allItems.keys
+          .map((key) => new _SecItem(key, allItems[key]))
           .toList(growable: false);
     });
   }
@@ -45,6 +45,8 @@ class _ItemsWidgetState extends State<ItemsWidget> {
   void _addNewItem() async {
     final String key = _randomValue();
     final String value = _randomValue();
+
+    print('addNewItem: [$key] = [$value]');
 
     await _storage.write(key: key, value: value);
     _readAll();
@@ -74,25 +76,31 @@ class _ItemsWidgetState extends State<ItemsWidget> {
           ],
         ),
         body: new ListView.builder(
-          itemCount: _items.length,
+          itemCount: _secureItems.length,
           itemBuilder: (BuildContext context, int index) => new ListTile(
-                trailing: new PopupMenuButton(
-                    onSelected: (_ItemActions action) =>
-                        _performAction(action, _items[index]),
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<_ItemActions>>[
-                          new PopupMenuItem(
-                            value: _ItemActions.delete,
-                            child: new Text('Delete'),
-                          ),
-                          new PopupMenuItem(
-                            value: _ItemActions.edit,
-                            child: new Text('Edit'),
-                          ),
-                        ]),
-                title: new Text(_items[index].value),
-                subtitle: new Text(_items[index].key),
-              ),
+            trailing: new PopupMenuButton(
+                onSelected: (_ItemActions action) =>
+                    _performAction(action, _secureItems[index]),
+                itemBuilder: (BuildContext context) =>
+                    <PopupMenuEntry<_ItemActions>>[
+                      new PopupMenuItem(
+                        value: _ItemActions.delete,
+                        child: new Text('Delete'),
+                      ),
+                      new PopupMenuItem(
+                        value: _ItemActions.edit,
+                        child: new Text('Edit'),
+                      ),
+                    ]),
+            title: new Text(
+              _secureItems[index].value,
+              style: TextStyle(color: Colors.pinkAccent),
+            ),
+            subtitle: new Text(
+              'KEY: ${_secureItems[index].key}',
+              style: TextStyle(color: Colors.grey.withOpacity(0.5)),
+            ),
+          ),
         ),
       );
 
@@ -126,10 +134,10 @@ class _ItemsWidgetState extends State<ItemsWidget> {
 }
 
 class _EditItemWidget extends StatelessWidget {
-  final TextEditingController _controller;
-
   _EditItemWidget(String text)
       : _controller = new TextEditingController(text: text);
+
+  final TextEditingController _controller;
 
   @override
   Widget build(BuildContext context) {
@@ -152,8 +160,8 @@ class _EditItemWidget extends StatelessWidget {
 }
 
 class _SecItem {
+  _SecItem(this.key, this.value);
+
   final String key;
   final String value;
-
-  _SecItem(this.key, this.value);
 }
